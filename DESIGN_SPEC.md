@@ -74,7 +74,7 @@ Màu sắc được trích xuất chính xác từ CSS gốc của Vessa:
 
 ## 3. TYPOGRAPHY (HỆ THỐNG CHỮ)
 
-- **Font Family:** `"Urbanist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;`
+- **Font Family:** `"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;`
   - Font hình học hiện đại, các nét bo tròn nhẹ nhàng, thanh thoát, hỗ trợ đầy đủ tiếng Việt với dấu chuẩn.
 - **Tabular Nums:** Bắt buộc áp dụng `font-variant-numeric: tabular-nums` cho tất cả:
   - Giá trị tiền tệ (VNĐ), kích thước (m²), khối lượng (kg), tiến độ (%), mã chứng từ (SKU/PO/DH).
