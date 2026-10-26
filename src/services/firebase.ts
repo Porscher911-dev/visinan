@@ -5,11 +5,17 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getDatabase, ref, set, onValue, get } from 'firebase/database';
 
-export const FIREBASE_DB_URL = 'https://devis-815bc-default-rtdb.asia-southeast1.firebasedatabase.app/';
+export const FIREBASE_DB_URL = 'https://devis-815bc-default-rtdb.asia-southeast1.firebasedatabase.app';
 
-const firebaseConfig = {
-  databaseURL: FIREBASE_DB_URL,
-  projectId: 'devis-815bc'
+export const firebaseConfig = {
+  apiKey: "AIzaSyAq-g2UtyKQ5z0atcqZSYMKe0hkD6kutaQ",
+  authDomain: "devis-815bc.firebaseapp.com",
+  databaseURL: "https://devis-815bc-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "devis-815bc",
+  storageBucket: "devis-815bc.firebasestorage.app",
+  messagingSenderId: "953533722129",
+  appId: "1:953533722129:web:d97a14ab72b7ff72188bb0",
+  measurementId: "G-F3WTMY46Z3"
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
