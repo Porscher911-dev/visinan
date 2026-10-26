@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Package,
   AlertTriangle,
@@ -13,123 +13,40 @@ import {
   X,
   Boxes
 } from 'lucide-react';
-
-interface MaterialStock {
-  id: string;
-  sku: string;
-  name: string;
-  category: 'BAT_IN' | 'DECAL' | 'TAM_OP' | 'LED_NGUON' | 'MUC_IN';
-  unit: string;
-  quantity: number;
-  minStock: number;
-  unitPrice: number;
-  location: string;
-  lastUpdated: string;
-}
+import { MaterialStock } from '../../types';
+import { INITIAL_MATERIAL_STOCKS } from '../../data/printingData';
+import { FirebaseService } from '../../services/firebase';
 
 interface Props {
   initialOpenAdd?: boolean;
 }
 
 export const VessaInventoryView: React.FC<Props> = ({ initialOpenAdd = false }) => {
-  const [items, setItems] = useState<MaterialStock[]>([
-    {
-      id: 'mat-1',
-      sku: 'VT-BAT-01',
-      name: 'Cuộn Bạt Hiflex 3.2m Dày 0.36mm (Gân Trắng)',
-      category: 'BAT_IN',
-      unit: 'Cuộn (80m)',
-      quantity: 14,
-      minStock: 5,
-      unitPrice: 1920000,
-      location: 'Kho A - Kệ Cuộn 01',
-      lastUpdated: '2026-10-24'
-    },
-    {
-      id: 'mat-2',
-      sku: 'VT-BAT-02',
-      name: 'Cuộn Bạt Không Gân Cao Cấp UV 3M Khổ 3.2m',
-      category: 'BAT_IN',
-      unit: 'Cuộn (50m)',
-      quantity: 2, // Low stock!
-      minStock: 5,
-      unitPrice: 4750000,
-      location: 'Kho A - Kệ Cuộn 02',
-      lastUpdated: '2026-10-25'
-    },
-    {
-      id: 'mat-3',
-      sku: 'VT-DEC-01',
-      name: 'Cuộn Decal PP Cán Màng Bóng Khổ 1.52m',
-      category: 'DECAL',
-      unit: 'Cuộn (50m)',
-      quantity: 8,
-      minStock: 4,
-      unitPrice: 1600000,
-      location: 'Kho A - Kệ Decal 01',
-      lastUpdated: '2026-10-22'
-    },
-    {
-      id: 'mat-4',
-      sku: 'VT-ALU-01',
-      name: 'Tấm Nhôm Nhựa Alu Alcorest 3mm x 0.10 EV2002',
-      category: 'TAM_OP',
-      unit: 'Tấm (1.22x2.44m)',
-      quantity: 35,
-      minStock: 10,
-      unitPrice: 385000,
-      location: 'Kho B - Giá Tấm Đứng',
-      lastUpdated: '2026-10-23'
-    },
-    {
-      id: 'mat-5',
-      sku: 'VT-MIC-01',
-      name: 'Tấm Mica Đài Loan Chochen 3mm Trong Suốt',
-      category: 'TAM_OP',
-      unit: 'Tấm (1.22x2.44m)',
-      quantity: 18,
-      minStock: 6,
-      unitPrice: 620000,
-      location: 'Kho B - Giá Mica Nằm',
-      lastUpdated: '2026-10-21'
-    },
-    {
-      id: 'mat-6',
-      sku: 'VT-LED-01',
-      name: 'Led Module 3 Bóng Samsung Chip 2835 12V Trắng Lạnh',
-      category: 'LED_NGUON',
-      unit: 'Vỉ (20 bóng)',
-      quantity: 120,
-      minStock: 50,
-      unitPrice: 95000,
-      location: 'Kho C - Tủ Linh Kiện 03',
-      lastUpdated: '2026-10-25'
-    },
-    {
-      id: 'mat-7',
-      sku: 'VT-NGU-01',
-      name: 'Nguồn Tổ Ong Chống Nước Ngoài Trời 12V 400W 33A',
-      category: 'LED_NGUON',
-      unit: 'Cái',
-      quantity: 15,
-      minStock: 8,
-      unitPrice: 280000,
-      location: 'Kho C - Tủ Linh Kiện 01',
-      lastUpdated: '2026-10-20'
-    },
-    {
-      id: 'mat-8',
-      sku: 'VT-MUC-01',
-      name: 'Mực In UV Curable TaiMes Chính Hãng (Can 5L)',
-      category: 'MUC_IN',
-      unit: 'Can (5L)',
-      quantity: 3, // Low stock!
-      minStock: 6,
-      unitPrice: 3200000,
-      location: 'Kho Pha Chế Mực In',
-      lastUpdated: '2026-10-24'
-    }
-  ]);
+  const [items, setItems] = useState<MaterialStock[]>(INITIAL_MATERIAL_STOCKS);
+
+  // Firebase Realtime Sync
+  useEffect(() => {
+    let isMounted = true;
+    FirebaseService.getNode<MaterialStock[]>('inventory').then((data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setItems(data);
+      } else {
+        FirebaseService.syncNode('inventory', INITIAL_MATERIAL_STOCKS);
+      }
+    });
+
+    const unsubscribe = FirebaseService.subscribeNode<MaterialStock[]>('inventory', (data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setItems(data);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
 
   const [searchQuery, setSearchQuery] = useState('');
   const [catFilter, setCatFilter] = useState('ALL');
@@ -206,9 +123,13 @@ export const VessaInventoryView: React.FC<Props> = ({ initialOpenAdd = false }) 
       lastUpdated: new Date().toISOString().split('T')[0]
     };
 
-    setItems(prev => [newItem, ...prev]);
+    const updated = [newItem, ...items];
+    setItems(updated);
     setIsAddModalOpen(false);
     showToast(`Đã nhập kho thành công: "${newItem.name}" (${newItem.quantity} ${newItem.unit})!`);
+
+    // Đồng bộ lên Firebase RTDB
+    FirebaseService.syncNode('inventory', updated);
   };
 
   const handleOpenExportModal = () => {
@@ -239,7 +160,7 @@ export const VessaInventoryView: React.FC<Props> = ({ initialOpenAdd = false }) 
       return;
     }
 
-    setItems(prev => prev.map(it => {
+    const updated = items.map(it => {
       if (it.id === target.id) {
         return {
           ...it,
@@ -248,10 +169,14 @@ export const VessaInventoryView: React.FC<Props> = ({ initialOpenAdd = false }) 
         };
       }
       return it;
-    }));
+    });
 
+    setItems(updated);
     setIsExportModalOpen(false);
     showToast(`Đã xuất kho ${q} ${target.unit} "${target.name}" cho đơn ${exportForm.orderCode}!`);
+
+    // Đồng bộ lên Firebase RTDB
+    FirebaseService.syncNode('inventory', updated);
   };
 
   const filteredItems = items.filter(it => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   Printer,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { INITIAL_PRINT_ORDERS } from '../../data/printingData';
 import { PrintOrder, OrderProgressStatus } from '../../types';
+import { FirebaseService } from '../../services/firebase';
 
 export const VessaOrdersView: React.FC = () => {
   const { setActiveTab } = useApp();
@@ -27,6 +28,31 @@ export const VessaOrdersView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [orderTab, setOrderTab] = useState<'overview' | 'production' | 'installation' | 'finance'>('overview');
+
+  // Firebase Realtime Sync
+  useEffect(() => {
+    let isMounted = true;
+    FirebaseService.getNode<PrintOrder[]>('orders').then((data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setOrders(data);
+        if (data[0]) setSelectedOrder(data[0]);
+      } else {
+        FirebaseService.syncNode('orders', INITIAL_PRINT_ORDERS);
+      }
+    });
+
+    const unsubscribe = FirebaseService.subscribeNode<PrintOrder[]>('orders', (data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setOrders(data);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
 
   const filteredOrders = orders.filter((ord) => {
     const matchStatus = statusFilter === 'ALL' || ord.status === statusFilter;

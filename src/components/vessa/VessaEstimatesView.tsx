@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   FileText,
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { INITIAL_PRINT_ESTIMATES, PRINT_MATERIALS_CATALOG } from '../../data/printingData';
 import { PrintEstimate, PrintEstimateItem, PrintMaterialCategory } from '../../types';
+import { FirebaseService } from '../../services/firebase';
 
 export const VessaEstimatesView: React.FC = () => {
   const { currentUser } = useApp();
@@ -21,6 +22,31 @@ export const VessaEstimatesView: React.FC = () => {
   const [selectedEstimate, setSelectedEstimate] = useState<PrintEstimate | null>(INITIAL_PRINT_ESTIMATES[0]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
+
+  // Firebase Realtime Sync
+  useEffect(() => {
+    let isMounted = true;
+    FirebaseService.getNode<PrintEstimate[]>('estimates').then((data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setEstimates(data);
+        if (data[0]) setSelectedEstimate(data[0]);
+      } else {
+        FirebaseService.syncNode('estimates', INITIAL_PRINT_ESTIMATES);
+      }
+    });
+
+    const unsubscribe = FirebaseService.subscribeNode<PrintEstimate[]>('estimates', (data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setEstimates(data);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
 
   // New Estimate Form State
   const [customerName, setCustomerName] = useState('');
@@ -134,9 +160,13 @@ export const VessaEstimatesView: React.FC = () => {
       salesperson: currentUser.name
     };
 
-    setEstimates([newEst, ...estimates]);
+    const updated = [newEst, ...estimates];
+    setEstimates(updated);
     setSelectedEstimate(newEst);
     setShowCreateModal(false);
+
+    // Đồng bộ lên Firebase RTDB
+    FirebaseService.syncNode('estimates', updated);
   };
 
   const filteredEstimates = estimates.filter(e =>

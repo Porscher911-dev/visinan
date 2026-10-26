@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ActiveNavTab } from '../../types';
 import {
@@ -15,8 +15,17 @@ import {
   CheckCircle2,
   DollarSign,
   UserPlus,
-  Menu
+  Menu,
+  Database,
+  ShieldAlert,
+  Copy,
+  Check,
+  ExternalLink,
+  RefreshCw,
+  X
 } from 'lucide-react';
+import { FirebaseService, FirebaseStatus, FIREBASE_DB_URL } from '../../services/firebase';
+import { INITIAL_PRINT_CUSTOMERS, INITIAL_PRINT_ORDERS, INITIAL_PRINT_ESTIMATES, INITIAL_MATERIAL_STOCKS } from '../../data/printingData';
 
 interface Props {
   onOpenFinder: () => void;
@@ -36,6 +45,21 @@ export const VessaTopHeader: React.FC<Props> = ({
   const { activeTab, setActiveTab, currentUser, openProfileModal, tasks } = useApp();
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // Firebase Realtime State
+  const [fbStatus, setFbStatus] = useState<FirebaseStatus>(FirebaseService.getStatus());
+  const [showFbModal, setShowFbModal] = useState(false);
+  const [copiedRules, setCopiedRules] = useState(false);
+  const [isCheckingFb, setIsCheckingFb] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [seedSuccess, setSeedSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsub = FirebaseService.subscribeStatus((st) => setFbStatus(st));
+    FirebaseService.checkHealth();
+    return unsub;
+  }, []);
+
 
   // Tab definitions corresponding to Vessa's top pill track
   const navTabs: { id: ActiveNavTab; label: string; count?: number }[] = [
@@ -166,6 +190,30 @@ export const VessaTopHeader: React.FC<Props> = ({
           >
             ⌘K
           </kbd>
+        </button>
+
+        {/* Firebase Realtime Database Status Badge */}
+        <button
+          type="button"
+          onClick={() => setShowFbModal(true)}
+          className="h-10 px-3 rounded-full flex items-center gap-2 transition-all cursor-pointer text-xs font-semibold"
+          style={{
+            background: fbStatus.permissionOk ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+            border: `1px solid ${fbStatus.permissionOk ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.4)'}`,
+            color: fbStatus.permissionOk ? '#10b981' : '#f59e0b'
+          }}
+          title="Xem trạng thái kết nối Firebase Database"
+        >
+          <span 
+            className="w-2 h-2 rounded-full animate-pulse"
+            style={{
+              background: fbStatus.permissionOk ? '#10b981' : '#f59e0b'
+            }}
+          />
+          <Database className="w-3.5 h-3.5 shrink-0" />
+          <span className="hidden sm:inline">
+            {fbStatus.permissionOk ? 'Firebase Live' : 'Firebase: Cần mở Rules'}
+          </span>
         </button>
 
         {/* Theme Switcher Quick Icon */}
@@ -356,6 +404,178 @@ export const VessaTopHeader: React.FC<Props> = ({
           <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--muted)' }} />
         </button>
       </div>
+
+      {/* Firebase Realtime Connection & Rules Modal */}
+      {showFbModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div 
+            className="w-full max-w-xl rounded-3xl p-6 shadow-2xl border space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
+            style={{
+              background: 'var(--raised)',
+              borderColor: 'var(--line)',
+              color: 'var(--text)'
+            }}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-3 border-b" style={{ borderColor: 'var(--line)' }}>
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #f59e0b, #ea580c)' }}
+                >
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Cơ Sở Dữ Liệu Firebase Realtime</h3>
+                  <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                    Đồng bộ tức thì mọi dữ liệu CRM, Báo Giá, Kho, Đơn Hàng đa thiết bị
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFbModal(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-75 transition-opacity"
+                style={{ background: 'var(--surface-2)' }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Status Card */}
+            <div 
+              className="p-4 rounded-2xl border space-y-2.5 text-xs"
+              style={{
+                background: fbStatus.permissionOk ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                borderColor: fbStatus.permissionOk ? 'rgba(16, 185, 129, 0.25)' : 'rgba(245, 158, 11, 0.25)'
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-semibold" style={{ color: 'var(--muted)' }}>Trạng thái WebSocket:</span>
+                <span className="font-bold flex items-center gap-1.5" style={{ color: fbStatus.connected ? '#10b981' : '#f43f5e' }}>
+                  <span className="w-2 h-2 rounded-full" style={{ background: fbStatus.connected ? '#10b981' : '#f43f5e' }} />
+                  {fbStatus.connected ? 'Đang kết nối trực tuyến (Connected)' : 'Ngoại tuyến (Offline)'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-semibold" style={{ color: 'var(--muted)' }}>Quyền đọc & ghi (Rules):</span>
+                <span className="font-bold" style={{ color: fbStatus.permissionOk ? '#10b981' : '#f59e0b' }}>
+                  {fbStatus.permissionOk ? '✅ Hợp lệ (Cho phép đọc & ghi)' : '⚠️ Cần mở Security Rules'}
+                </span>
+              </div>
+              <div className="pt-2 border-t text-[11px] break-all font-mono" style={{ borderColor: 'var(--line)', color: 'var(--muted)' }}>
+                URL: {FIREBASE_DB_URL}
+              </div>
+            </div>
+
+            {/* Instructions if permission is locked */}
+            {!fbStatus.permissionOk && (
+              <div className="space-y-3 p-4 rounded-2xl border" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
+                <div className="flex items-center gap-2 font-bold text-xs" style={{ color: '#f59e0b' }}>
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  <span>Hướng dẫn mở quyền đọc/ghi trên Firebase Console:</span>
+                </div>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--text)' }}>
+                  Khi mới tạo, Firebase Realtime Database mặc định ở chế độ khóa. Để ứng dụng lưu và đồng bộ dữ liệu giữa các máy tính, điện thoại, vui lòng cấu hình Rules như sau:
+                </p>
+
+                <div className="relative">
+                  <pre 
+                    className="p-3 rounded-xl text-xs font-mono overflow-x-auto select-all"
+                    style={{ background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--line)' }}
+                  >
+{`{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}`}
+                  </pre>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText('{\n  "rules": {\n    ".read": true,\n    ".write": true\n  }\n}');
+                      setCopiedRules(true);
+                      setTimeout(() => setCopiedRules(false), 2500);
+                    }}
+                    className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                    style={{
+                      background: copiedRules ? '#10b981' : 'var(--primary)',
+                      color: '#ffffff'
+                    }}
+                  >
+                    {copiedRules ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedRules ? 'Đã copy!' : 'Copy Rules'}</span>
+                  </button>
+                </div>
+
+                <a
+                  href="https://console.firebase.google.com/project/devis-815bc/database/devis-815bc-default-rtdb/rules"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="vessa-btn vessa-btn-ghost w-full flex items-center justify-center gap-2 text-xs font-bold"
+                >
+                  <span>Mở tab Rules trên Firebase Console</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            )}
+
+            {seedSuccess && (
+              <div className="p-3 rounded-xl text-xs font-bold flex items-center gap-2 text-emerald-500 bg-emerald-500/10 border border-emerald-500/20">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{seedSuccess}</span>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isCheckingFb}
+                onClick={async () => {
+                  setIsCheckingFb(true);
+                  const res = await FirebaseService.checkHealth();
+                  setIsCheckingFb(false);
+                  if (res.permissionOk) {
+                    setSeedSuccess('Kết nối Firebase đọc/ghi thành công 100%!');
+                    setTimeout(() => setSeedSuccess(null), 3000);
+                  }
+                }}
+                className="vessa-btn vessa-btn-primary flex-1 flex items-center justify-center gap-2 text-xs font-bold h-10"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isCheckingFb ? 'animate-spin' : ''}`} />
+                <span>{isCheckingFb ? 'Đang kiểm tra...' : 'Kiểm Tra Lại Kết Nối'}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isSeeding}
+                onClick={async () => {
+                  setIsSeeding(true);
+                  try {
+                    await Promise.all([
+                      FirebaseService.syncNode('customers', INITIAL_PRINT_CUSTOMERS),
+                      FirebaseService.syncNode('inventory', INITIAL_MATERIAL_STOCKS),
+                      FirebaseService.syncNode('orders', INITIAL_PRINT_ORDERS),
+                      FirebaseService.syncNode('estimates', INITIAL_PRINT_ESTIMATES)
+                    ]);
+                    setSeedSuccess('Đã nạp thành công dữ liệu mẫu lên Firebase!');
+                    setTimeout(() => setSeedSuccess(null), 3500);
+                  } catch (e: any) {
+                    alert('Lỗi nạp dữ liệu: ' + (e?.message || e));
+                  }
+                  setIsSeeding(false);
+                }}
+                className="vessa-btn vessa-btn-ghost flex-1 flex items-center justify-center gap-2 text-xs font-bold h-10"
+              >
+                <Database className="w-3.5 h-3.5 text-amber-500" />
+                <span>{isSeeding ? 'Đang nạp...' : 'Nạp Dữ Liệu Lên Firebase'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

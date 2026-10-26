@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   Search,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { INITIAL_PRINT_CUSTOMERS, INITIAL_PRINT_ORDERS } from '../../data/printingData';
 import { CustomerItem } from '../../types';
+import { FirebaseService } from '../../services/firebase';
 
 interface Props {
   initialOpenAdd?: boolean;
@@ -28,6 +29,31 @@ export const VessaCrmView: React.FC<Props> = ({ initialOpenAdd = false }) => {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerItem>(INITIAL_PRINT_CUSTOMERS[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [tierFilter, setTierFilter] = useState('ALL');
+
+  // Firebase Realtime Sync
+  useEffect(() => {
+    let isMounted = true;
+    FirebaseService.getNode<CustomerItem[]>('customers').then((data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setCustomers(data);
+        if (data[0]) setSelectedCustomer(data[0]);
+      } else {
+        FirebaseService.syncNode('customers', INITIAL_PRINT_CUSTOMERS);
+      }
+    });
+
+    const unsubscribe = FirebaseService.subscribeNode<CustomerItem[]>('customers', (data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setCustomers(data);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
 
   // Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(initialOpenAdd);
@@ -97,10 +123,14 @@ export const VessaCrmView: React.FC<Props> = ({ initialOpenAdd = false }) => {
       lastOrderDate: new Date().toISOString().split('T')[0]
     };
 
-    setCustomers(prev => [newCustomer, ...prev]);
+    const updated = [newCustomer, ...customers];
+    setCustomers(updated);
     setSelectedCustomer(newCustomer);
     setIsAddModalOpen(false);
     showToast(`Đã thêm thành công khách hàng "${newCustomer.name}" (${newCustomer.code})!`);
+
+    // Đồng bộ lên Firebase Realtime Database
+    FirebaseService.syncNode('customers', updated);
   };
 
   const filteredCustomers = customers.filter(c => {

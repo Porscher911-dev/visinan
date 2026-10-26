@@ -679,3 +679,17 @@ export interface CustomerItem {
   lastOrderDate: string;
 }
 
+export interface MaterialStock {
+  id: string;
+  sku: string;
+  name: string;
+  category: 'BAT_IN' | 'DECAL' | 'TAM_OP' | 'LED_NGUON' | 'MUC_IN';
+  unit: string;
+  quantity: number;
+  minStock: number;
+  unitPrice: number;
+  location: string;
+  lastUpdated: string;
+}
+
+
