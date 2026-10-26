@@ -1,0 +1,195 @@
+/* ==========================================================================
+   VESSA MOTION — chạy chữ, chuyển động, hiệu ứng lướt
+   Nhẹ, chỉ dùng transform/opacity. Tắt toàn bộ khi prefers-reduced-motion.
+   ========================================================================== */
+
+:root {
+  --dur-fast: 160ms;
+  --dur: 320ms;
+  --dur-slow: 560ms;
+}
+
+/* ---------- 1. Chuyển trang ---------- */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+.page-enter { animation: page-enter var(--dur-slow) var(--ease) both; }
+
+/* Tiêu đề trang: chữ trượt lên từng dòng */
+@keyframes title-rise {
+  from { opacity: 0; transform: translateY(0.6em); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+.page-enter h1 { animation: title-rise var(--dur-slow) var(--ease) 80ms both; }
+.page-enter h1 + p { animation: title-rise var(--dur-slow) var(--ease) 180ms both; }
+
+/* ---------- 2. Hiệu ứng lướt khi cuộn (scroll reveal) ---------- */
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(28px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+/* Fallback: xuất hiện lần lượt khi tải trang */
+.vessa-stat, .vessa-card {
+  animation: reveal-up var(--dur-slow) var(--ease) both;
+}
+.vessa-stat:nth-child(1) { animation-delay: 40ms; }
+.vessa-stat:nth-child(2) { animation-delay: 100ms; }
+.vessa-stat:nth-child(3) { animation-delay: 160ms; }
+.vessa-stat:nth-child(4) { animation-delay: 220ms; }
+.vessa-stat:nth-child(5) { animation-delay: 280ms; }
+
+/* Trình duyệt hỗ trợ scroll-driven animation: lướt tới đâu hiện tới đó */
+@supports (animation-timeline: view()) {
+  .vessa-card {
+    animation: reveal-up linear both;
+    animation-delay: 0s;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+  }
+}
+
+/* ---------- 3. Hiệu ứng lướt sáng (shine sweep) ---------- */
+.vessa-btn-primary, .vessa-stat { position: relative; overflow: hidden; isolation: isolate; }
+.vessa-btn-primary::after,
+.vessa-stat::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.28) 50%, transparent 65%);
+  transform: translateX(-120%);
+}
+.vessa-btn-primary:hover::after,
+.vessa-stat:hover::after {
+  transform: translateX(120%);
+  transition: transform 700ms var(--ease);
+}
+.vessa-btn:active { transform: scale(0.97); }
+.vessa-btn { transition: transform var(--dur-fast) var(--ease), filter var(--dur-fast), background var(--dur-fast); }
+
+/* Hàng bảng: lướt nền từ trái sang khi hover */
+.vessa-table tbody tr { position: relative; }
+.vessa-table tbody tr:hover { box-shadow: inset 3px 0 0 var(--primary); }
+
+/* Thanh tiến độ: lướt đầy */
+@keyframes bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.vessa-card [style*="border-radius"][style*="width:"] > div,
+.vessa-card .rounded-full > div[style*="width"] {
+  transform-origin: left center;
+  animation: bar-grow 900ms var(--ease) 200ms both;
+}
+
+/* ---------- 4. Chạy chữ (marquee ticker) ---------- */
+.vessa-ticker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 6px 0 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.vessa-ticker__label {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.vessa-ticker__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor;
+  animation: ticker-pulse 1.4s ease-in-out infinite;
+}
+@keyframes ticker-pulse { 50% { opacity: 0.35; transform: scale(0.7); } }
+
+.vessa-ticker__viewport {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.vessa-ticker__track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll var(--ticker-dur, 38s) linear infinite;
+}
+.vessa-ticker:hover .vessa-ticker__track,
+.vessa-ticker:focus-within .vessa-ticker__track { animation-play-state: paused; }
+.vessa-ticker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 28px;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text);
+}
+.vessa-ticker__item b { color: var(--primary); }
+.vessa-ticker__item i { width: 6px; height: 6px; border-radius: 50%; background: var(--c, var(--faint)); }
+@keyframes ticker-scroll { to { transform: translateX(-50%); } }
+
+.vessa-ticker__toggle {
+  flex: none;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--muted);
+  transition: background var(--dur-fast);
+}
+.vessa-ticker__toggle:hover { background: var(--well); color: var(--text); }
+
+/* ---------- 5. Gõ chữ (typewriter) ---------- */
+.vessa-typing {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  max-width: 100%;
+  border-right: 2px solid var(--primary);
+  animation: typing 2.4s steps(var(--chars, 30), end) 300ms both,
+             caret 0.8s step-end infinite;
+}
+@keyframes typing { from { width: 0; } to { width: calc(var(--chars, 30) * 1ch); } }
+@keyframes caret { 50% { border-color: transparent; } }
+
+/* ---------- 6. Tab / menu ---------- */
+.tab, .nav button { transition: background var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur-fast); }
+.tab:hover { transform: translateY(-1px); }
+.vessa-rail { transition: width var(--dur) var(--ease); }
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-in { animation: pop-in var(--dur-fast) var(--ease) both; }
+.vessa-finder-card { animation: pop-in var(--dur) var(--ease) both; }
+
+/* ---------- Giảm chuyển động ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .vessa-ticker__track { animation: none !important; overflow-x: auto; }
+  .vessa-typing { border-right: 0; width: auto !important; }
+}

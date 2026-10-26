@@ -1,0 +1,406 @@
+/* ==========================================================================
+   VESSA DESIGN SYSTEM — CSS TOKENS & CORE UTILITIES
+   Reference: Vessa — Stock and Supply Management Dashboard
+   Applied for: ERP CRM In Ấn & Bảng Hiệu Quảng Cáo
+   ========================================================================== */
+
+:root {
+  --font: "Urbanist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Font Scaling */
+  --fs-2xs: 11px;
+  --fs-xs: 12px;
+  --fs-sm: 12.5px;
+  --fs-md: 13.5px;
+  --fs-base: 14px;
+  --fs-lg: 15px;
+  --fs-xl: 17px;
+  --fs-2xl: 20px;
+  --fs-3xl: 22px;
+  --fs-4xl: 26px;
+  --fs-display: 34px;
+
+  /* Colors — Light Mode */
+  --bg: #eef0ec;
+  --glow-a: color-mix(in srgb, var(--pine) 14%, #f8faf7);
+  --glow-b: #f1ead6;
+  --surface: #fcfdfc;
+  --surface-2: #f3f5f2;
+  --raised: #ffffff;
+  --well: #14241c0e;
+  --line: #14241c16;
+  --line-2: #14241c2b;
+  --hair: #14241c33;
+  --shadow: 0 1px 2px #14241c0a, 0 14px 34px -22px #14241c47;
+  --shadow-pop: 0 26px 60px -20px #14241c57, 0 2px 6px #14241c14;
+
+  --text: #18201b;
+  --muted: #56615a;
+  --faint: #6c7770;
+
+  /* Primary Accent: Vessa Terracotta / Burnt Orange */
+  --primary: #a8481c;
+  --on-primary: #fff7f2;
+  --pine: #b9531f;
+  --ochre: #c88a12;
+  --teal: #1d8a7b;
+  --sky: #3a72c8;
+  --rose: #cf4a5c;
+  --sage: #6d9a2c;
+  --slate: #6b7380;
+  --ocean: #1f7f99;
+
+  /* Functional Semantics */
+  --good: #23804d;
+  --warn: #93600a;
+  --bad: #bf3a2d;
+  --info: #2f63b8;
+  --soft: 14%;
+
+  /* Radii & Layout Dimensions */
+  --r-card: 22px;
+  --r-tile: 14px;
+  --gap: 16px;
+  --rail-w: 76px;
+  --top-h: 76px;
+  --gutter: clamp(12px, 1.6vw, 24px);
+  --ease: cubic-bezier(.2, .8, .2, 1);
+
+  color-scheme: light;
+}
+
+/* Dark Mode Tokens */
+:root[data-theme="dark"],
+.dark {
+  --bg: #0f1412;
+  --glow-a: color-mix(in srgb, var(--pine) 10%, transparent);
+  --glow-b: #f2c0560d;
+  --surface: #171d1a;
+  --surface-2: #1c231f;
+  --raised: #242c28;
+  --well: #ffffff0e;
+  --line: #ffffff14;
+  --line-2: #ffffff29;
+  --hair: #ffffff38;
+  --shadow: 0 1px 0 #ffffff09 inset, 0 18px 40px -26px #000000d9;
+  --shadow-pop: 0 26px 60px -18px #000000c7, 0 0 0 1px #ffffff14;
+
+  --text: #ecf2ee;
+  --muted: #a8b4ad;
+  --faint: #88948d;
+
+  --primary: #ffa77a;
+  --on-primary: #2b0f03;
+  --pine: #ffa77a;
+  --ochre: #f2c056;
+  --teal: #4fcab8;
+  --sky: #7eacf2;
+  --rose: #f2828f;
+  --sage: #b4d66a;
+  --slate: #a3acb8;
+  --ocean: #5cbcd6;
+
+  --good: #6fd38e;
+  --warn: #f2c056;
+  --bad: #f58c7f;
+  --info: #8bb3f6;
+  --soft: 18%;
+
+  color-scheme: dark;
+}
+
+/* Base Body Application */
+body {
+  min-height: 100dvh;
+  color: var(--text);
+  background: radial-gradient(70vmax 50vmax at 0% -10%, var(--glow-a), transparent 70%),
+              radial-gradient(60vmax 45vmax at 100% 0%, var(--glow-b), transparent 70%),
+              var(--bg);
+  background-attachment: fixed;
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  line-height: 1.45;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* Number formatting */
+.tnum, .num, td, .table, time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* App Grid Shell */
+.vessa-shell {
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  gap: 16px var(--gap);
+  padding: 14px var(--gutter) 40px;
+  min-height: 100dvh;
+  transition: grid-template-columns 0.3s var(--ease);
+}
+
+.side-open .vessa-shell,
+html.side-open {
+  --rail-w: 220px;
+}
+
+/* Sticky Top Header */
+.vessa-top {
+  position: sticky;
+  top: 10px;
+  z-index: 40;
+  min-height: var(--top-h);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  backdrop-filter: saturate(1.4) blur(14px);
+  border-radius: 26px;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+}
+
+/* Sticky Rail Sidebar */
+.vessa-rail {
+  position: sticky;
+  top: calc(var(--top-h) + 26px);
+  z-index: 30;
+  width: var(--rail-w);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-self: start;
+  transition: width 0.3s var(--ease);
+}
+
+.vessa-card {
+  border-radius: var(--r-card);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  position: relative;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.vessa-stat {
+  border-radius: var(--r-card);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.vessa-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-pop);
+}
+
+/* Pill Buttons */
+.vessa-btn {
+  height: 42px;
+  font-weight: 700;
+  font-size: var(--fs-md);
+  white-space: nowrap;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.vessa-btn-primary {
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--primary) 85%, transparent);
+}
+.vessa-btn-primary:hover {
+  filter: brightness(1.12);
+}
+
+.vessa-btn-ghost {
+  background: var(--surface);
+  border-color: var(--line-2);
+  color: var(--text);
+}
+.vessa-btn-ghost:hover {
+  background: var(--surface-2);
+}
+
+.vessa-btn-soft {
+  background: color-mix(in srgb, var(--primary) var(--soft), transparent);
+  color: var(--primary);
+}
+.vessa-btn-soft:hover {
+  background: color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+.vessa-btn-sm {
+  height: 36px;
+  font-size: var(--fs-sm);
+  padding: 0 14px;
+}
+
+.vessa-btn-xs {
+  height: 30px;
+  font-size: var(--fs-xs);
+  padding: 0 10px;
+}
+
+/* Badges */
+.vessa-badge {
+  font-size: var(--fs-xs);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.vessa-badge-good {
+  background: color-mix(in srgb, var(--good) var(--soft), transparent);
+  color: var(--good);
+}
+.vessa-badge-warn {
+  background: color-mix(in srgb, var(--ochre) 20%, transparent);
+  color: var(--warn);
+}
+.vessa-badge-bad {
+  background: color-mix(in srgb, var(--bad) var(--soft), transparent);
+  color: var(--bad);
+}
+.vessa-badge-info {
+  background: color-mix(in srgb, var(--info) var(--soft), transparent);
+  color: var(--info);
+}
+.vessa-badge-plain {
+  background: var(--well);
+  color: var(--muted);
+}
+
+/* Deltas */
+.vessa-delta {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.vessa-delta-good { color: var(--good); }
+.vessa-delta-bad { color: var(--bad); }
+
+/* Vessa Tables */
+.vessa-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.vessa-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-md);
+}
+.vessa-table th {
+  text-align: left;
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  padding: 11px 14px;
+  white-space: nowrap;
+}
+.vessa-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+  vertical-align: middle;
+}
+.vessa-table tbody tr {
+  transition: background-color 0.15s;
+}
+.vessa-table tbody tr:hover {
+  background-color: var(--surface-2);
+}
+
+/* Forms & Inputs */
+.vessa-input,
+.vessa-select {
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  border-radius: 999px;
+  outline: none;
+  height: 42px;
+  padding: 0 16px;
+  font-size: var(--fs-base);
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.vessa-input:focus,
+.vessa-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+.vessa-textarea {
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  border-radius: 16px;
+  outline: none;
+  padding: 12px 16px;
+  font-size: var(--fs-base);
+  color: var(--text);
+  width: 100%;
+}
+.vessa-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+/* Vessa Finder Modal */
+.vessa-finder-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(15, 20, 18, 0.45);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 10vh 16px 20px;
+}
+.vessa-finder-card {
+  width: min(640px, 100%);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .vessa-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vessa-rail {
+    display: none;
+  }
+}
