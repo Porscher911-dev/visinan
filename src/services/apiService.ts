@@ -5,6 +5,8 @@
 
 import { Employee, Department, Task, AttendanceRecord, LeaveRequest, Announcement, GoogleDocDeliverable, FinancialVoucher, ProjectContract, WarehouseItem, InventoryAuditTicket, WarehouseInvoice, ChatMessage, BudgetApproval, PayrollRecord, CompanyBrandConfig } from '../types';
 
+import { FirebaseService } from './firebase';
+
 export interface DatabasePayload {
   employees?: Employee[];
   departments?: Department[];
@@ -74,9 +76,20 @@ export const ApiService = {
   },
 
   /**
-   * Fetch complete persistent dataset from VPS Database
+   * Fetch complete persistent dataset from Firebase RTDB or VPS Server
    */
   async getDatabase(): Promise<DatabasePayload | null> {
+    // 1. Try Firebase RTDB first
+    try {
+      const fbData = await FirebaseService.getNode('erp_data');
+      if (fbData && typeof fbData === 'object') {
+        return fbData as DatabasePayload;
+      }
+    } catch (e) {
+      console.warn('[Firebase] Fallback from RTDB:', e);
+    }
+
+    // 2. Fallback to VPS backend /api/data
     try {
       const res = await fetch('/api/data', {
         headers: { 'Accept': 'application/json' },
@@ -94,13 +107,19 @@ export const ApiService = {
   },
 
   /**
-   * Push changes to VPS Database
+   * Push changes to Firebase RTDB and VPS Database
    */
   async syncDatabase(payload: DatabasePayload): Promise<DatabasePayload | null> {
     try {
-      // First broadcast to other open tabs locally
+      // Broadcast to other open tabs locally
       this.broadcast('DATABASE_SYNC', payload);
 
+      // Sync to Firebase Realtime Database
+      FirebaseService.syncNode('erp_data', payload).catch(err => {
+        console.warn('[Firebase] Background sync error:', err);
+      });
+
+      // Sync to VPS backend
       const res = await fetch('/api/sync', {
         method: 'POST',
         headers: {
