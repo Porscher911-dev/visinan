@@ -18,8 +18,26 @@ import { FirebaseService } from '../../services/firebase';
 
 export const VessaEstimatesView: React.FC = () => {
   const { currentUser } = useApp();
-  const [estimates, setEstimates] = useState<PrintEstimate[]>(INITIAL_PRINT_ESTIMATES);
-  const [selectedEstimate, setSelectedEstimate] = useState<PrintEstimate | null>(INITIAL_PRINT_ESTIMATES[0]);
+  const [estimates, setEstimates] = useState<PrintEstimate[]>(() => {
+    try {
+      const cached = localStorage.getItem('fb_cache_estimates');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_PRINT_ESTIMATES;
+  });
+  const [selectedEstimate, setSelectedEstimate] = useState<PrintEstimate | null>(() => {
+    try {
+      const cached = localStorage.getItem('fb_cache_estimates');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+      }
+    } catch {}
+    return INITIAL_PRINT_ESTIMATES[0];
+  });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
 

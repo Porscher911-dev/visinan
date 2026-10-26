@@ -811,9 +811,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const VALID_TABS: ActiveNavTab[] = [
     'dashboard',
+    'estimates',
+    'orders',
+    'production',
+    'inventory',
+    'installation',
+    'finance',
+    'crm',
+    'settings',
     'attendance',
     'tasks',
-    'finance',
     'payroll',
     'docs',
     'performance',
@@ -822,7 +829,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     'board',
     'workload',
     'announcements',
-    'production',
     'chat',
     'resources'
   ];

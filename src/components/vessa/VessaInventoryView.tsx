@@ -22,7 +22,16 @@ interface Props {
 }
 
 export const VessaInventoryView: React.FC<Props> = ({ initialOpenAdd = false }) => {
-  const [items, setItems] = useState<MaterialStock[]>(INITIAL_MATERIAL_STOCKS);
+  const [items, setItems] = useState<MaterialStock[]>(() => {
+    try {
+      const cached = localStorage.getItem('fb_cache_inventory');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_MATERIAL_STOCKS;
+  });
 
   // Firebase Realtime Sync
   useEffect(() => {

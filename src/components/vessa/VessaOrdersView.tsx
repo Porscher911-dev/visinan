@@ -23,8 +23,26 @@ import { FirebaseService } from '../../services/firebase';
 
 export const VessaOrdersView: React.FC = () => {
   const { setActiveTab } = useApp();
-  const [orders, setOrders] = useState<PrintOrder[]>(INITIAL_PRINT_ORDERS);
-  const [selectedOrder, setSelectedOrder] = useState<PrintOrder | null>(INITIAL_PRINT_ORDERS[0]);
+  const [orders, setOrders] = useState<PrintOrder[]>(() => {
+    try {
+      const cached = localStorage.getItem('fb_cache_orders');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_PRINT_ORDERS;
+  });
+  const [selectedOrder, setSelectedOrder] = useState<PrintOrder | null>(() => {
+    try {
+      const cached = localStorage.getItem('fb_cache_orders');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+      }
+    } catch {}
+    return INITIAL_PRINT_ORDERS[0];
+  });
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [orderTab, setOrderTab] = useState<'overview' | 'production' | 'installation' | 'finance'>('overview');

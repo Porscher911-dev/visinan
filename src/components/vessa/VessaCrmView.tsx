@@ -25,8 +25,27 @@ interface Props {
 }
 
 export const VessaCrmView: React.FC<Props> = ({ initialOpenAdd = false }) => {
-  const [customers, setCustomers] = useState<CustomerItem[]>(INITIAL_PRINT_CUSTOMERS);
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerItem>(INITIAL_PRINT_CUSTOMERS[0]);
+  const [customers, setCustomers] = useState<CustomerItem[]>(() => {
+    try {
+      const cached = localStorage.getItem('fb_cache_customers');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_PRINT_CUSTOMERS;
+  });
+
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerItem>(() => {
+    try {
+      const cached = localStorage.getItem('fb_cache_customers');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+      }
+    } catch {}
+    return INITIAL_PRINT_CUSTOMERS[0];
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [tierFilter, setTierFilter] = useState('ALL');
 
