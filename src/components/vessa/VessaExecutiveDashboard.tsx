@@ -22,11 +22,11 @@ import {
 } from 'lucide-react';
 import { INITIAL_PRINT_ORDERS, INITIAL_PRINT_ESTIMATES } from '../../data/printingData';
 import { CountUp } from './CountUp';
+import { RevenueTrendChart } from './RevenueTrendChart';
 
 export const VessaExecutiveDashboard: React.FC = () => {
   const { setActiveTab } = useApp();
   const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month' | 'quarter'>('month');
-  const [hoveredChartPoint, setHoveredChartPoint] = useState<{ day: string; rev: number; cost: number; profit: number; x: number; y: number } | null>(null);
 
   // Aggregated KPI numbers for Printing & Signage Business
   const totalRevenue = 485200000;       // Doanh thu ghi nhận tháng (485.2 triệu)
@@ -49,25 +49,6 @@ export const VessaExecutiveDashboard: React.FC = () => {
     { day: '25/10', rev: 84, cost: 40, profit: 44 }
   ];
 
-  // SVG Chart Calculations
-  const maxVal = 100;
-  const svgWidth = 600;
-  const svgHeight = 220;
-  const paddingX = 40;
-  const paddingY = 30;
-
-  const getPoints = (key: 'rev' | 'cost' | 'profit') => {
-    return trendData.map((d, index) => {
-      const x = paddingX + (index / (trendData.length - 1)) * (svgWidth - paddingX * 2);
-      const y = svgHeight - paddingY - (d[key] / maxVal) * (svgHeight - paddingY * 2);
-      return { x, y, ...d };
-    });
-  };
-
-  const revPoints = getPoints('rev');
-  const costPoints = getPoints('cost');
-  const revPathStr = revPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const revAreaStr = `${revPathStr} L ${revPoints[revPoints.length - 1].x} ${svgHeight - paddingY} L ${revPoints[0].x} ${svgHeight - paddingY} Z`;
 
   // Product Distribution Data (Donut segments)
   const productShare = [
@@ -247,154 +228,16 @@ export const VessaExecutiveDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Revenue & Profit Interactive Trend Chart (2 Cols) */}
         <div className="vessa-card lg:col-span-2">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-            <div>
-              <h2 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
-                <BarChart3 className="w-4 h-4 text-orange-600" />
-                Diễn Biến Doanh Thu & Giá Vốn Sản Xuất (Triệu VNĐ)
-              </h2>
-              <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                Rê chuột lên các điểm biểu đồ để xem chi tiết doanh thu, chi phí vật tư và lợi nhuận gộp theo ngày.
-              </p>
-            </div>
-            {/* Chart Legend */}
-            <div className="flex items-center gap-4 text-xs font-semibold">
-              <span className="flex items-center gap-1.5" style={{ color: 'var(--primary)' }}>
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--primary)' }} /> Doanh thu
-              </span>
-              <span className="flex items-center gap-1.5" style={{ color: 'var(--muted)' }}>
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--muted)' }} /> Giá vốn
-              </span>
-            </div>
+          <div className="mb-2">
+            <h2 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <BarChart3 className="w-4 h-4 text-orange-600" />
+              Diễn Biến Doanh Thu & Giá Vốn Sản Xuất (Triệu VNĐ)
+            </h2>
+            <p className="text-xs" style={{ color: 'var(--muted)' }}>
+              Rê chuột hoặc dùng phím mũi tên để xem doanh thu, giá vốn và lợi nhuận gộp theo ngày.
+            </p>
           </div>
-
-          {/* SVG Line Chart Container */}
-          <div className="relative w-full overflow-hidden" style={{ height: '240px' }}>
-            <svg 
-              viewBox={`0 0 ${svgWidth} ${svgHeight}`} 
-              className="w-full h-full overflow-visible"
-              preserveAspectRatio="none"
-            >
-              {/* Background horizontal grid lines */}
-              {[20, 40, 60, 80].map((val) => {
-                const y = svgHeight - paddingY - (val / maxVal) * (svgHeight - paddingY * 2);
-                return (
-                  <g key={val}>
-                    <line
-                      x1={paddingX}
-                      y1={y}
-                      x2={svgWidth - paddingX}
-                      y2={y}
-                      stroke="var(--line)"
-                      strokeDasharray="3 4"
-                    />
-                    <text
-                      x={paddingX - 8}
-                      y={y + 4}
-                      textAnchor="end"
-                      fontSize="10"
-                      fill="var(--muted)"
-                      fontFamily="var(--font)"
-                    >
-                      {val}M
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Area Gradient */}
-              <defs>
-                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.28" />
-                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-              <path d={revAreaStr} fill="url(#revGrad)" />
-
-              {/* Cost Line */}
-              <path
-                d={costPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
-                fill="none"
-                stroke="var(--line-2)"
-                strokeWidth="2"
-                strokeDasharray="4 4"
-              />
-
-              {/* Revenue Line */}
-              <path
-                d={revPathStr}
-                fill="none"
-                stroke="var(--primary)"
-                strokeWidth="2.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-
-              {/* Interactive Points */}
-              {revPoints.map((p, i) => (
-                <circle
-                  key={i}
-                  cx={p.x}
-                  cy={p.y}
-                  r={hoveredChartPoint?.day === p.day ? 6 : 4}
-                  fill="var(--surface)"
-                  stroke="var(--primary)"
-                  strokeWidth="2.5"
-                  className="cursor-pointer transition-all"
-                  onMouseEnter={() => setHoveredChartPoint(p)}
-                />
-              ))}
-
-              {/* X-axis labels */}
-              {trendData.map((d, index) => {
-                const x = paddingX + (index / (trendData.length - 1)) * (svgWidth - paddingX * 2);
-                return (
-                  <text
-                    key={d.day}
-                    x={x}
-                    y={svgHeight - 8}
-                    textAnchor="middle"
-                    fontSize="11"
-                    fontWeight="600"
-                    fill="var(--muted)"
-                    fontFamily="var(--font)"
-                  >
-                    {d.day}
-                  </text>
-                );
-              })}
-            </svg>
-
-            {/* Hover Tooltip Overlay */}
-            {hoveredChartPoint && (
-              <div
-                className="absolute z-20 pointer-events-none p-2.5 rounded-xl border shadow-lg text-xs"
-                style={{
-                  background: 'var(--raised)',
-                  borderColor: 'var(--line)',
-                  left: `${(hoveredChartPoint.x / svgWidth) * 100}%`,
-                  top: `${(hoveredChartPoint.y / svgHeight) * 100 - 45}%`,
-                  transform: 'translate(-50%, -100%)'
-                }}
-              >
-                <div className="font-bold border-b pb-1 mb-1" style={{ color: 'var(--text)', borderColor: 'var(--line)' }}>
-                  Ngày {hoveredChartPoint.day}
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span style={{ color: 'var(--muted)' }}>Doanh thu:</span>
-                  <span className="font-bold" style={{ color: 'var(--primary)' }}>{hoveredChartPoint.rev} triệu</span>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span style={{ color: 'var(--muted)' }}>Giá vốn vật tư:</span>
-                  <span className="font-semibold" style={{ color: 'var(--text)' }}>{hoveredChartPoint.cost} triệu</span>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span style={{ color: 'var(--muted)' }}>Lợi nhuận gộp:</span>
-                  <span className="font-bold" style={{ color: 'var(--good)' }}>+{hoveredChartPoint.profit} triệu</span>
-                </div>
-              </div>
-            )}
-          </div>
+          <RevenueTrendChart data={trendData} />
         </div>
 
         {/* Right: Revenue Breakdown by Core Product Group (1 Col) */}

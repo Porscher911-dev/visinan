@@ -9,7 +9,9 @@ import {
   Filter,
   CheckCircle2,
   Layers,
-  Archive
+  Archive,
+  X,
+  Boxes
 } from 'lucide-react';
 
 interface MaterialStock {
@@ -25,7 +27,11 @@ interface MaterialStock {
   lastUpdated: string;
 }
 
-export const VessaInventoryView: React.FC = () => {
+interface Props {
+  initialOpenAdd?: boolean;
+}
+
+export const VessaInventoryView: React.FC<Props> = ({ initialOpenAdd = false }) => {
   const [items, setItems] = useState<MaterialStock[]>([
     {
       id: 'mat-1',
@@ -128,6 +134,126 @@ export const VessaInventoryView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [catFilter, setCatFilter] = useState('ALL');
 
+  // Modals & Toast State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(initialOpenAdd);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // New Material Form State
+  const [newMatForm, setNewMatForm] = useState({
+    sku: '',
+    name: '',
+    category: 'BAT_IN' as MaterialStock['category'],
+    unit: 'Cuộn (80m)',
+    quantity: 10,
+    minStock: 4,
+    unitPrice: 1800000,
+    location: 'Kho A - Kệ Cuộn 01'
+  });
+  const [newMatErrors, setNewMatErrors] = useState<{ name?: string; quantity?: string }>({});
+
+  // Export Stock Form State
+  const [exportForm, setExportForm] = useState({
+    materialId: items[0]?.id || '',
+    quantity: 1,
+    orderCode: 'DH-8892',
+    note: 'Xuất xưởng in pano & bảng hiệu'
+  });
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleOpenAddModal = () => {
+    const nextIdx = items.length + 1;
+    setNewMatForm({
+      sku: `VT-IN-${nextIdx.toString().padStart(2, '0')}`,
+      name: '',
+      category: 'BAT_IN',
+      unit: 'Cuộn (80m)',
+      quantity: 10,
+      minStock: 4,
+      unitPrice: 1800000,
+      location: 'Kho A - Kệ Cuộn Mới'
+    });
+    setNewMatErrors({});
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveMaterial = (e: React.FormEvent) => {
+    e.preventDefault();
+    const errors: { name?: string; quantity?: string } = {};
+    if (!newMatForm.name.trim()) errors.name = 'Vui lòng nhập tên và quy cách vật tư';
+    if (newMatForm.quantity <= 0) errors.quantity = 'Số lượng nhập phải lớn hơn 0';
+
+    if (Object.keys(errors).length > 0) {
+      setNewMatErrors(errors);
+      return;
+    }
+
+    const newItem: MaterialStock = {
+      id: `mat-${Date.now()}`,
+      sku: newMatForm.sku.trim() || `VT-${Date.now().toString().slice(-4)}`,
+      name: newMatForm.name.trim(),
+      category: newMatForm.category,
+      unit: newMatForm.unit,
+      quantity: Number(newMatForm.quantity),
+      minStock: Number(newMatForm.minStock) || 3,
+      unitPrice: Number(newMatForm.unitPrice) || 0,
+      location: newMatForm.location.trim() || 'Kho Tổng Xưởng',
+      lastUpdated: new Date().toISOString().split('T')[0]
+    };
+
+    setItems(prev => [newItem, ...prev]);
+    setIsAddModalOpen(false);
+    showToast(`Đã nhập kho thành công: "${newItem.name}" (${newItem.quantity} ${newItem.unit})!`);
+  };
+
+  const handleOpenExportModal = () => {
+    setExportForm({
+      materialId: items[0]?.id || '',
+      quantity: 1,
+      orderCode: 'DH-8892',
+      note: 'Xuất xưởng in cho đơn hàng'
+    });
+    setExportError(null);
+    setIsExportModalOpen(true);
+  };
+
+  const handleExportStock = (e: React.FormEvent) => {
+    e.preventDefault();
+    const target = items.find(it => it.id === exportForm.materialId);
+    if (!target) {
+      setExportError('Vui lòng chọn vật tư cần xuất');
+      return;
+    }
+    const q = Number(exportForm.quantity);
+    if (q <= 0) {
+      setExportError('Số lượng xuất phải lớn hơn 0');
+      return;
+    }
+    if (q > target.quantity) {
+      setExportError(`Số lượng xuất (${q}) vượt quá tồn kho hiện tại (${target.quantity} ${target.unit})`);
+      return;
+    }
+
+    setItems(prev => prev.map(it => {
+      if (it.id === target.id) {
+        return {
+          ...it,
+          quantity: it.quantity - q,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+      }
+      return it;
+    }));
+
+    setIsExportModalOpen(false);
+    showToast(`Đã xuất kho ${q} ${target.unit} "${target.name}" cho đơn ${exportForm.orderCode}!`);
+  };
+
   const filteredItems = items.filter(it => {
     const matchCat = catFilter === 'ALL' || it.category === catFilter;
     const q = searchQuery.toLowerCase().trim();
@@ -139,7 +265,29 @@ export const VessaInventoryView: React.FC = () => {
   const totalStockVal = items.reduce((sum, it) => sum + it.quantity * it.unitPrice, 0);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6 animate-in fade-in duration-200 relative">
+      {/* Toast Alert */}
+      {toastMessage && (
+        <div 
+          className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border animate-in slide-in-from-top-4"
+          style={{
+            background: 'var(--raised)',
+            borderColor: 'var(--primary)',
+            color: 'var(--text)'
+          }}
+        >
+          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+          <span className="text-xs font-bold">{toastMessage}</span>
+          <button 
+            type="button" 
+            onClick={() => setToastMessage(null)}
+            className="ml-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b" style={{ borderColor: 'var(--line)' }}>
         <div>
@@ -157,14 +305,16 @@ export const VessaInventoryView: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="vessa-btn vessa-btn-ghost h-10 px-4 text-xs font-bold flex items-center gap-1.5"
+            onClick={handleOpenExportModal}
+            className="vessa-btn vessa-btn-ghost h-10 px-4 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowUpRight className="w-4 h-4 text-emerald-500" />
             <span>Xuất Kho Cho Đơn In</span>
           </button>
           <button
             type="button"
-            className="vessa-btn vessa-btn-primary h-10 px-4 text-xs font-bold flex items-center gap-1.5"
+            onClick={handleOpenAddModal}
+            className="vessa-btn vessa-btn-primary h-10 px-4 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Nhập Vật Tư Mới</span>
@@ -302,6 +452,344 @@ export const VessaInventoryView: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Modal 1: Nhập Vật Tư Mới */}
+      {isAddModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAddModalOpen(false);
+          }}
+        >
+          <div 
+            className="w-full max-w-lg rounded-3xl p-6 shadow-2xl border animate-in zoom-in-95 duration-150"
+            style={{
+              background: 'var(--raised)',
+              borderColor: 'var(--line)',
+              color: 'var(--text)'
+            }}
+          >
+            <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--line)' }}>
+              <div className="flex items-center gap-2.5">
+                <div 
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--well)', color: 'var(--primary)' }}
+                >
+                  <Package className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Nhập Kho Vật Tư Mới</h3>
+                  <p className="text-[11px]" style={{ color: 'var(--muted)' }}>
+                    Bổ sung bạt in, decal, alu, mica, led và can mực vào kho xưởng
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setIsAddModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                style={{ background: 'var(--surface-2)' }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveMaterial} className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-1">
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Mã SKU <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newMatForm.sku}
+                    onChange={(e) => setNewMatForm({ ...newMatForm, sku: e.target.value })}
+                    className="vessa-input w-full h-9 px-3 text-xs font-mono font-bold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Danh Mục Vật Tư
+                  </label>
+                  <select
+                    value={newMatForm.category}
+                    onChange={(e) => setNewMatForm({ ...newMatForm, category: e.target.value as any })}
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  >
+                    <option value="BAT_IN">Bạt In Hiflex / UV Không Gân</option>
+                    <option value="DECAL">Decal PP / Decal Sữa Ngoại Trời</option>
+                    <option value="TAM_OP">Tấm Ốp Alu / Mica Chống Ố</option>
+                    <option value="LED_NGUON">Led Module / Bộ Nguồn Biến Áp</option>
+                    <option value="MUC_IN">Mực In Phun Solvent Eco TaiMes</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                  Tên & Quy Cách Vật Tư <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newMatForm.name}
+                  onChange={(e) => {
+                    setNewMatForm({ ...newMatForm, name: e.target.value });
+                    if (newMatErrors.name) setNewMatErrors({ ...newMatErrors, name: undefined });
+                  }}
+                  placeholder="Ví dụ: Cuộn Bạt Hiflex 3.2m Dày 0.38mm hoặc Tấm Alu 3mm..."
+                  className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                  style={{ background: 'var(--surface-2)', borderColor: newMatErrors.name ? 'var(--bad)' : 'var(--line)' }}
+                />
+                {newMatErrors.name && (
+                  <p className="text-[10px] text-rose-500 mt-1 font-semibold">{newMatErrors.name}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Đơn Vị Tính
+                  </label>
+                  <input
+                    type="text"
+                    value={newMatForm.unit}
+                    onChange={(e) => setNewMatForm({ ...newMatForm, unit: e.target.value })}
+                    placeholder="Cuộn, Tấm, Can..."
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Số Lượng Nhập <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={newMatForm.quantity}
+                    onChange={(e) => {
+                      setNewMatForm({ ...newMatForm, quantity: Number(e.target.value) });
+                      if (newMatErrors.quantity) setNewMatErrors({ ...newMatErrors, quantity: undefined });
+                    }}
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: newMatErrors.quantity ? 'var(--bad)' : 'var(--line)' }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Định Mức Min
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newMatForm.minStock}
+                    onChange={(e) => setNewMatForm({ ...newMatForm, minStock: Number(e.target.value) })}
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Đơn Giá Vốn Nhập (VNĐ)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50000"
+                    value={newMatForm.unitPrice}
+                    onChange={(e) => setNewMatForm({ ...newMatForm, unitPrice: Number(e.target.value) })}
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Vị Trí Lưu Kho Xưởng
+                  </label>
+                  <input
+                    type="text"
+                    value={newMatForm.location}
+                    onChange={(e) => setNewMatForm({ ...newMatForm, location: e.target.value })}
+                    placeholder="Kho A - Kệ Cuộn 01"
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t" style={{ borderColor: 'var(--line)' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="vessa-btn vessa-btn-ghost h-9 px-4 text-xs font-bold cursor-pointer"
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="vessa-btn vessa-btn-primary h-9 px-5 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Xác Nhận Nhập Kho</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 2: Xuất Kho Cho Đơn In */}
+      {isExportModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsExportModalOpen(false);
+          }}
+        >
+          <div 
+            className="w-full max-w-lg rounded-3xl p-6 shadow-2xl border animate-in zoom-in-95 duration-150"
+            style={{
+              background: 'var(--raised)',
+              borderColor: 'var(--line)',
+              color: 'var(--text)'
+            }}
+          >
+            <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--line)' }}>
+              <div className="flex items-center gap-2.5">
+                <div 
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--well)', color: 'var(--good)' }}
+                >
+                  <ArrowUpRight className="w-5 h-5 stroke-[2.2] text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Phiếu Xuất Kho Vật Tư</h3>
+                  <p className="text-[11px]" style={{ color: 'var(--muted)' }}>
+                    Cấp phát cuộn bạt, decal, tấm mica/alu cho thợ máy & xưởng in
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setIsExportModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                style={{ background: 'var(--surface-2)' }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleExportStock} className="mt-4 space-y-4">
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                  Chọn Mặt Hàng Cần Xuất <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={exportForm.materialId}
+                  onChange={(e) => {
+                    setExportForm({ ...exportForm, materialId: e.target.value });
+                    setExportError(null);
+                  }}
+                  className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                  style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                >
+                  {items.map((it) => (
+                    <option key={it.id} value={it.id}>
+                      [{it.sku}] {it.name} — Còn tồn: {it.quantity} {it.unit}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Số Lượng Xuất <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={exportForm.quantity}
+                    onChange={(e) => {
+                      setExportForm({ ...exportForm, quantity: Number(e.target.value) });
+                      setExportError(null);
+                    }}
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: exportError ? 'var(--bad)' : 'var(--line)' }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Mã Đơn Hàng / Dự Án
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={exportForm.orderCode}
+                    onChange={(e) => setExportForm({ ...exportForm, orderCode: e.target.value })}
+                    placeholder="DH-8892 (VinFast...)"
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  />
+                </div>
+              </div>
+
+              {exportError && (
+                <div className="p-2.5 rounded-xl border border-rose-300 bg-rose-50 text-rose-600 text-xs font-semibold">
+                  {exportError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                  Ghi Chú Mục Đích Xuất
+                </label>
+                <input
+                  type="text"
+                  value={exportForm.note}
+                  onChange={(e) => setExportForm({ ...exportForm, note: e.target.value })}
+                  placeholder="Giao máy in Mimaki UV số 2..."
+                  className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                  style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t" style={{ borderColor: 'var(--line)' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsExportModalOpen(false)}
+                  className="vessa-btn vessa-btn-ghost h-9 px-4 text-xs font-bold cursor-pointer"
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="vessa-btn vessa-btn-primary h-9 px-5 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Xác Nhận Xuất Kho</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

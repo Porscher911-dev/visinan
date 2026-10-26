@@ -9,8 +9,8 @@
 
 @layer base {
   :root {
-    --brand-font: 'Be Vietnam Pro', 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    --font-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --brand-font: "Urbanist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-inter: "Urbanist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
     /* Primary Blues */
     --primary-blue: #0875D9;
@@ -45,25 +45,28 @@
     --grad-bg: linear-gradient(135deg, #EAF5FF 0%, #F4F8FC 55%, #DCEEFF 100%);
   }
 
+  *, *::before, *::after {
+    font-family: "Urbanist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
   html, body, #root {
-    font-family: var(--brand-font);
+    font-family: "Urbanist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     font-optical-sizing: auto;
     letter-spacing: -0.011em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: var(--grad-bg);
     min-height: 100vh;
   }
 
   button, input, optgroup, select, textarea {
-    font-family: inherit;
+    font-family: "Urbanist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   }
 
   .font-sans {
-    font-family: var(--brand-font) !important;
+    font-family: "Urbanist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   }
 
-  .font-mono {
+  .font-mono, code, pre, kbd, samp {
     font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
     font-feature-settings: 'tnum' on, 'zero' on;
   }

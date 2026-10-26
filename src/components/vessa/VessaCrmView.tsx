@@ -10,16 +10,98 @@ import {
   Printer,
   ChevronRight,
   ShieldAlert,
-  Award
+  Award,
+  X,
+  CheckCircle2,
+  Building,
+  UserCheck
 } from 'lucide-react';
 import { INITIAL_PRINT_CUSTOMERS, INITIAL_PRINT_ORDERS } from '../../data/printingData';
 import { CustomerItem } from '../../types';
 
-export const VessaCrmView: React.FC = () => {
+interface Props {
+  initialOpenAdd?: boolean;
+}
+
+export const VessaCrmView: React.FC<Props> = ({ initialOpenAdd = false }) => {
   const [customers, setCustomers] = useState<CustomerItem[]>(INITIAL_PRINT_CUSTOMERS);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerItem>(INITIAL_PRINT_CUSTOMERS[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [tierFilter, setTierFilter] = useState('ALL');
+
+  // Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(initialOpenAdd);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // New Customer Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    company: '',
+    phone: '',
+    email: '',
+    address: '',
+    tier: 'NEW' as 'VIP' | 'LOYAL' | 'NEW',
+    currentDebt: 0
+  });
+  const [formErrors, setFormErrors] = useState<{ name?: string; phone?: string }>({});
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleOpenModal = () => {
+    setFormData({
+      name: '',
+      company: '',
+      phone: '',
+      email: '',
+      address: '',
+      tier: 'NEW',
+      currentDebt: 0
+    });
+    setFormErrors({});
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    const errors: { name?: string; phone?: string } = {};
+    if (!formData.name.trim()) {
+      errors.name = 'Vui lòng nhập họ tên khách hàng hoặc người đại diện';
+    }
+    if (!formData.phone.trim()) {
+      errors.phone = 'Vui lòng nhập số điện thoại liên hệ';
+    } else if (!/^[0-9+.\s()-]{8,15}$/.test(formData.phone.trim())) {
+      errors.phone = 'Số điện thoại không hợp lệ (8-15 chữ số)';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    const codeNum = (customers.length + 1).toString().padStart(3, '0');
+    const newCustomer: CustomerItem = {
+      id: `cust-${Date.now()}`,
+      code: `KH-${codeNum}`,
+      name: formData.name.trim(),
+      company: formData.company.trim() || undefined,
+      phone: formData.phone.trim(),
+      email: formData.email.trim() || `lienhe@${formData.company ? formData.company.toLowerCase().replace(/[^a-z0-9]/g, '') : 'khachhang'}.com`,
+      address: formData.address.trim() || 'Hồ Chí Minh',
+      tier: formData.tier,
+      totalOrders: 0,
+      totalSpent: 0,
+      currentDebt: Number(formData.currentDebt) || 0,
+      lastOrderDate: new Date().toISOString().split('T')[0]
+    };
+
+    setCustomers(prev => [newCustomer, ...prev]);
+    setSelectedCustomer(newCustomer);
+    setIsAddModalOpen(false);
+    showToast(`Đã thêm thành công khách hàng "${newCustomer.name}" (${newCustomer.code})!`);
+  };
 
   const filteredCustomers = customers.filter(c => {
     const matchTier = tierFilter === 'ALL' || c.tier === tierFilter;
@@ -35,7 +117,29 @@ export const VessaCrmView: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6 animate-in fade-in duration-200 relative">
+      {/* Toast Alert */}
+      {toastMessage && (
+        <div 
+          className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border animate-in slide-in-from-top-4"
+          style={{
+            background: 'var(--raised)',
+            borderColor: 'var(--primary)',
+            color: 'var(--text)'
+          }}
+        >
+          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+          <span className="text-xs font-bold">{toastMessage}</span>
+          <button 
+            type="button" 
+            onClick={() => setToastMessage(null)}
+            className="ml-2 text-slate-400 hover:text-slate-600"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b" style={{ borderColor: 'var(--line)' }}>
         <div>
@@ -52,7 +156,8 @@ export const VessaCrmView: React.FC = () => {
 
         <button
           type="button"
-          className="vessa-btn vessa-btn-primary h-10 px-4 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto"
+          onClick={handleOpenModal}
+          className="vessa-btn vessa-btn-primary h-10 px-4 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Thêm Khách Hàng Mới</span>
@@ -250,6 +355,191 @@ export const VessaCrmView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal: Thêm Khách Hàng Mới */}
+      {isAddModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAddModalOpen(false);
+          }}
+        >
+          <div 
+            className="w-full max-w-lg rounded-3xl p-6 shadow-2xl border animate-in zoom-in-95 duration-150"
+            style={{
+              background: 'var(--raised)',
+              borderColor: 'var(--line)',
+              color: 'var(--text)'
+            }}
+          >
+            <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--line)' }}>
+              <div className="flex items-center gap-2.5">
+                <div 
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--well)', color: 'var(--primary)' }}
+                >
+                  <UserCheck className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Thêm Khách Hàng Mới</h3>
+                  <p className="text-[11px]" style={{ color: 'var(--muted)' }}>
+                    Lưu trữ thông tin đối tác & hạn mức công nợ cho đơn in
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setIsAddModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                style={{ background: 'var(--surface-2)' }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomer} className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Tên Khách Hàng / Đại Diện <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
+                    }}
+                    placeholder="Nguyễn Văn A"
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: formErrors.name ? 'var(--bad)' : 'var(--line)' }}
+                  />
+                  {formErrors.name && (
+                    <p className="text-[10px] text-rose-500 mt-1 font-semibold">{formErrors.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Doanh Nghiệp / Chuỗi Cửa Hàng
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.company}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    placeholder="Công ty CP Truyền Thông..."
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Số Điện Thoại Liên Hệ <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => {
+                      setFormData({ ...formData, phone: e.target.value });
+                      if (formErrors.phone) setFormErrors({ ...formErrors, phone: undefined });
+                    }}
+                    placeholder="0909 123 456"
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: formErrors.phone ? 'var(--bad)' : 'var(--line)' }}
+                  />
+                  {formErrors.phone && (
+                    <p className="text-[10px] text-rose-500 mt-1 font-semibold">{formErrors.phone}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Địa Chỉ Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="email@doanhnghiep.vn"
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                  Địa Chỉ Giao Hàng / Lắp Đặt Bảng Hiệu
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Số nhà, đường, phường/xã, quận/huyện..."
+                  className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                  style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Phân Hạng Khách Hàng
+                  </label>
+                  <select
+                    value={formData.tier}
+                    onChange={(e) => setFormData({ ...formData, tier: e.target.value as any })}
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  >
+                    <option value="NEW">Khách Mới (NEW)</option>
+                    <option value="LOYAL">Thân Thiết (LOYAL)</option>
+                    <option value="VIP">Khách VIP (Ưu tiên sản xuất)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text)' }}>
+                    Công Nợ Ban Đầu (VNĐ)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="500000"
+                    value={formData.currentDebt || 0}
+                    onChange={(e) => setFormData({ ...formData, currentDebt: Number(e.target.value) })}
+                    className="vessa-input w-full h-9 px-3 text-xs font-semibold"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t" style={{ borderColor: 'var(--line)' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="vessa-btn vessa-btn-ghost h-9 px-4 text-xs font-bold"
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="vessa-btn vessa-btn-primary h-9 px-5 text-xs font-bold flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Lưu Khách Hàng</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

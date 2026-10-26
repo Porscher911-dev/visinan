@@ -193,3 +193,7 @@
   .vessa-ticker__track { animation: none !important; overflow-x: auto; }
   .vessa-typing { border-right: 0; width: auto !important; }
 }
+
+/* Biểu đồ: đường doanh thu vẽ dần */
+@keyframes chart-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.chart-draw { stroke-dasharray: 1; animation: chart-draw 1100ms var(--ease) 150ms both; }

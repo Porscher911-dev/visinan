@@ -13,12 +13,13 @@ import {
   Package,
   Wrench,
   CheckCircle2,
-  DollarSign
+  DollarSign,
+  UserPlus
 } from 'lucide-react';
 
 interface Props {
   onOpenFinder: () => void;
-  onOpenQuickCreate: (type: 'estimate' | 'order' | 'inventory') => void;
+  onOpenQuickCreate: (type: 'estimate' | 'order' | 'inventory' | 'customer') => void;
   isDarkMode: boolean;
   onToggleTheme: () => void;
 }
@@ -286,6 +287,21 @@ export const VessaTopHeader: React.FC<Props> = ({
                 <div>
                   <div>Phiếu Nhập Vật Tư Kho</div>
                   <div className="text-[10px] font-normal" style={{ color: 'var(--muted)' }}>Nhập cuộn bạt, decal, mica, led</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setShowCreateMenu(false); onOpenQuickCreate('customer'); }}
+                className="w-full text-left p-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-colors"
+                style={{ color: 'var(--text)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--well)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <UserPlus className="w-4 h-4 text-purple-500" />
+                <div>
+                  <div>Thêm Khách Hàng Mới</div>
+                  <div className="text-[10px] font-normal" style={{ color: 'var(--muted)' }}>Hồ sơ đối tác & công nợ</div>
                 </div>
               </button>
             </div>

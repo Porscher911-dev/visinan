@@ -34,6 +34,8 @@ const MainLayout: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isFinderOpen, setIsFinderOpen] = useState(false);
+  const [quickAddCustomer, setQuickAddCustomer] = useState(false);
+  const [quickAddInventory, setQuickAddInventory] = useState(false);
 
   // Sync theme with html root dataset
   useEffect(() => {
@@ -70,10 +72,17 @@ const MainLayout: React.FC = () => {
     return <LoginPage />;
   }
 
-  const handleQuickCreate = (type: 'estimate' | 'order' | 'inventory') => {
+  const handleQuickCreate = (type: 'estimate' | 'order' | 'inventory' | 'customer') => {
     if (type === 'estimate') setActiveTab('estimates');
     if (type === 'order') setActiveTab('orders');
-    if (type === 'inventory') setActiveTab('inventory');
+    if (type === 'inventory') {
+      setQuickAddInventory(true);
+      setActiveTab('inventory');
+    }
+    if (type === 'customer') {
+      setQuickAddCustomer(true);
+      setActiveTab('crm');
+    }
   };
 
   return (
@@ -102,9 +111,9 @@ const MainLayout: React.FC = () => {
         {activeTab === 'estimates' && <VessaEstimatesView />}
         {activeTab === 'orders' && <VessaOrdersView />}
         {activeTab === 'production' && <VessaProductionKanbanView />}
-        {activeTab === 'inventory' && <VessaInventoryView />}
+        {activeTab === 'inventory' && <VessaInventoryView initialOpenAdd={quickAddInventory} />}
         {activeTab === 'installation' && <VessaInstallationView />}
-        {activeTab === 'crm' && <VessaCrmView />}
+        {activeTab === 'crm' && <VessaCrmView initialOpenAdd={quickAddCustomer} />}
         {activeTab === 'finance' && <FinanceView />}
         {activeTab === 'settings' && (
           <VessaSettingsView
