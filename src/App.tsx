@@ -28,6 +28,7 @@ import { DocsView } from './components/docs/DocsView';
 import { FinanceView } from './components/finance/FinanceView';
 import { UserProfileModal } from './components/common/UserProfileModal';
 import { CompanyGroupChat } from './components/chat/CompanyGroupChat';
+import { VessaMobileNav } from './components/vessa/VessaMobileNav';
 
 const MainLayout: React.FC = () => {
   const { activeTab, setActiveTab, isAuthenticated, isProfileModalOpen, closeProfileModal } = useApp();
@@ -36,6 +37,7 @@ const MainLayout: React.FC = () => {
   const [isFinderOpen, setIsFinderOpen] = useState(false);
   const [quickAddCustomer, setQuickAddCustomer] = useState(false);
   const [quickAddInventory, setQuickAddInventory] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Sync theme with html root dataset
   useEffect(() => {
@@ -93,6 +95,7 @@ const MainLayout: React.FC = () => {
         onOpenQuickCreate={handleQuickCreate}
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+        onOpenMobileNav={() => setIsMobileDrawerOpen(true)}
       />
 
       {/* Vessa Sticky Sidebar Rail */}
@@ -148,6 +151,15 @@ const MainLayout: React.FC = () => {
       <UserProfileModal
         isOpen={isProfileModalOpen}
         onClose={closeProfileModal}
+      />
+
+      {/* Mobile Floating Bottom Bar and Slide-in Drawer */}
+      <VessaMobileNav
+        isOpen={isMobileDrawerOpen}
+        onOpen={() => setIsMobileDrawerOpen(true)}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => setIsDarkMode(!isDarkMode)}
       />
     </div>
   );

@@ -399,8 +399,72 @@ html.side-open {
 @media (max-width: 1024px) {
   .vessa-shell {
     grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 96px;
   }
   .vessa-rail {
     display: none;
   }
 }
+
+@media (max-width: 768px) {
+  :root {
+    --gap: 12px;
+    --top-h: 60px;
+    --r-card: 18px;
+    --r-tile: 12px;
+  }
+
+  .vessa-shell {
+    padding: 8px 10px 96px;
+    gap: 12px;
+  }
+
+  .vessa-top {
+    border-radius: 20px;
+    padding: 8px 10px;
+    min-height: 58px;
+    top: 6px;
+    gap: 8px;
+  }
+
+  .vessa-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .vessa-stat {
+    padding: 13px 14px;
+    border-radius: 16px;
+  }
+
+  .vessa-table th, 
+  .vessa-table td {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .vessa-finder-backdrop {
+    padding: 4vh 10px 20px;
+  }
+  .vessa-finder-card {
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .vessa-top .top__tools .finder-btn span,
+  .vessa-top .top__tools .finder-btn kbd {
+    display: none !important;
+  }
+  .vessa-top .top__tools .finder-btn {
+    padding: 0 !important;
+    width: 36px !important;
+    height: 36px !important;
+    justify-content: center !important;
+  }
+  .vessa-top .top__tools button {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+

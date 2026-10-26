@@ -14,7 +14,8 @@ import {
   Wrench,
   CheckCircle2,
   DollarSign,
-  UserPlus
+  UserPlus,
+  Menu
 } from 'lucide-react';
 
 interface Props {
@@ -22,13 +23,15 @@ interface Props {
   onOpenQuickCreate: (type: 'estimate' | 'order' | 'inventory' | 'customer') => void;
   isDarkMode: boolean;
   onToggleTheme: () => void;
+  onOpenMobileNav?: () => void;
 }
 
 export const VessaTopHeader: React.FC<Props> = ({
   onOpenFinder,
   onOpenQuickCreate,
   isDarkMode,
-  onToggleTheme
+  onToggleTheme,
+  onOpenMobileNav
 }) => {
   const { activeTab, setActiveTab, currentUser, openProfileModal, tasks } = useApp();
   const [showCreateMenu, setShowCreateMenu] = useState(false);
@@ -50,30 +53,48 @@ export const VessaTopHeader: React.FC<Props> = ({
 
   return (
     <header className="vessa-top">
-      {/* Brand Logo & Name */}
-      <div 
-        onClick={() => setActiveTab('dashboard')} 
-        className="brand cursor-pointer flex items-center gap-3.5 select-none"
-      >
-        <span 
-          className="brand__mark flex items-center justify-center text-white"
-          style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--pine) 70%, #fff), var(--primary) 70%)',
-            boxShadow: '0 8px 18px -10px var(--primary)'
-          }}
+      {/* Brand Logo & Name + Mobile Hamburger */}
+      <div className="flex items-center gap-2">
+        {onOpenMobileNav && (
+          <button
+            type="button"
+            onClick={onOpenMobileNav}
+            className="lg:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-colors cursor-pointer shrink-0"
+            style={{
+              background: 'var(--surface-2)',
+              borderColor: 'var(--line)',
+              color: 'var(--text)'
+            }}
+            title="Mở menu điều hướng"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
+        <div 
+          onClick={() => setActiveTab('dashboard')} 
+          className="brand cursor-pointer flex items-center gap-2.5 sm:gap-3.5 select-none"
         >
-          <Printer className="w-6 h-6" />
-        </span>
-        <div className="leading-tight">
-          <span className="font-bold text-lg tracking-tight block" style={{ color: 'var(--text)' }}>
-            Vessa <span style={{ color: 'var(--primary)' }}>ERP</span>
+          <span 
+            className="brand__mark flex items-center justify-center text-white shrink-0"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--pine) 70%, #fff), var(--primary) 70%)',
+              boxShadow: '0 8px 18px -10px var(--primary)'
+            }}
+          >
+            <Printer className="w-5 h-5" />
           </span>
-          <small className="text-xs font-semibold block" style={{ color: 'var(--muted)' }}>
-            In Ấn & Bảng Hiệu Mrex
-          </small>
+          <div className="leading-tight">
+            <span className="font-bold text-base sm:text-lg tracking-tight block" style={{ color: 'var(--text)' }}>
+              Vessa <span style={{ color: 'var(--primary)' }}>ERP</span>
+            </span>
+            <small className="text-[10px] sm:text-xs font-semibold hidden sm:block" style={{ color: 'var(--muted)' }}>
+              In Ấn & Bảng Hiệu Mrex
+            </small>
+          </div>
         </div>
       </div>
 
