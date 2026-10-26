@@ -89,10 +89,10 @@ export const VessaTopHeader: React.FC<Props> = ({
           </span>
           <div className="leading-tight">
             <span className="font-bold text-base sm:text-lg tracking-tight block" style={{ color: 'var(--text)' }}>
-              Vessa <span style={{ color: 'var(--primary)' }}>ERP</span>
+              Devis <span style={{ color: 'var(--primary)' }}>ERP</span>
             </span>
             <small className="text-[10px] sm:text-xs font-semibold hidden sm:block" style={{ color: 'var(--muted)' }}>
-              In Ấn & Bảng Hiệu Mrex
+              Quản Trị Doanh Nghiệp In Ấn & Bảng Hiệu
             </small>
           </div>
         </div>
